@@ -19,10 +19,14 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up JDK
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v4
         with:
-          distribution: 'adopt'
-          java-version: ${{ env.JDK_VERSION }}
+          distribution: 'temurin'
+          java-version: '11'
+          cache: 'maven'
+          cache-dependency-path: 'framework/modules/pom.xml'
+      - name: Build with Maven
+        run: mvn -B package --file pom.xml
 
 
       - name: 查看运行环境
@@ -32,7 +36,7 @@ jobs:
         run: java -version
 
       - name: 打包
-        run:  mvn clean package -f pom.xml -B -V -e -Dfindbugs.skip -Dcheckstyle.skip -Dpmd.skip=true -Dspotbugs.skip -Denforcer.skip -Dmaven.javadoc.skip -DskipTests -Dmaven.test.skip.exec -Dlicense.skip=true -Drat.skip=true -Dspotless.check.skip=true
+        run:  mvn  package -f pom.xml -B -V -e -Dfindbugs.skip -Dcheckstyle.skip -Dpmd.skip=true -Dspotbugs.skip -Denforcer.skip -Dmaven.javadoc.skip -DskipTests -Dmaven.test.skip.exec -Dlicense.skip=true -Drat.skip=true -Dspotless.check.skip=true
 
       - name: 制品上传
         uses: actions/upload-artifact@v4
