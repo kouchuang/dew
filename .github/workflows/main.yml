@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    env:
+      JDK_VERSION: 21
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: ${{ env.JDK_VERSION }}
+
+
+      - name: 查看运行环境
+        run: mvn -v
+
+      - name: 查看是否有java环境
+        run: java -version
+
+      - name: 进入目录
+        run: |
+         modules/cluster-common
+         ls -a
+
+      - name: 打包
+        run:  mvn package
+
+      - name: 制品上传
+        uses: actions/upload-artifact@v4
+        with:
+          name: 制品
+          path: target/test-actions-1.0.0-SNAPSHOT.jar
+
+      - name: 运行多行的shell命令
+        run: |
+          echo Add other actions to build,
+          echo test, and deploy your project.
+          ls
+          pwd
+          ls target/
