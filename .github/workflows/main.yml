@@ -52,3 +52,4 @@ jobs:
           ls framework
           pwd
           ls framework/modules
+          ls framework/modules/cluster-common
