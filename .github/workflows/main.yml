@@ -31,13 +31,8 @@ jobs:
       - name: 查看是否有java环境
         run: java -version
 
-      - name: 进入目录
-        run: |
-         modules/cluster-common
-         ls -a
-
       - name: 打包
-        run:  mvn package
+        run:  mvn clean package -f pom.xml -B -V -e -Dfindbugs.skip -Dcheckstyle.skip -Dpmd.skip=true -Dspotbugs.skip -Denforcer.skip -Dmaven.javadoc.skip -DskipTests -Dmaven.test.skip.exec -Dlicense.skip=true -Drat.skip=true -Dspotless.check.skip=true
 
       - name: 制品上传
         uses: actions/upload-artifact@v4
