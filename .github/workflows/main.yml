@@ -38,12 +38,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: 制品
-          path: framework/modules/target/
+          path: framework/modules/
 
       - name: 运行多行的shell命令
         run: |
           echo Add other actions to build,
           echo test, and deploy your project.
           ls
+          ls framework
           pwd
-          ls framework/modules/target
+          ls framework/modules
