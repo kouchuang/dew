@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      JDK_VERSION: 21
+      JDK_VERSION: 11
 
     steps:
       - name: Checkout
