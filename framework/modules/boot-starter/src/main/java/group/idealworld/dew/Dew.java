@@ -1,19 +1,3 @@
-/*
- * Copyright 2022. the original author or authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package group.idealworld.dew;
 
 import com.ecfront.dew.common.$;
@@ -31,6 +15,9 @@ import group.idealworld.dew.core.basic.loading.DewLoadImmediately;
 import group.idealworld.dew.core.basic.utils.NetUtils;
 import group.idealworld.dew.core.cluster.*;
 import group.idealworld.dew.core.notification.Notify;
+import group.idealworld.dew.core.util.ThreadLocalUtil;
+import jakarta.annotation.PostConstruct;
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,8 +27,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Configuration;
 
-import javax.annotation.PostConstruct;
-import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.*;
@@ -80,6 +65,11 @@ public class Dew {
      * The constant auth.
      */
     public static AuthAdapter auth;
+
+    /**
+     * The local variables
+     */
+    public static ThreadLocalUtil<String> threadLocalUtil = new ThreadLocalUtil<>();
 
     @Value("${spring.application.name:please-setting-this}")
     private String applicationName;
@@ -123,8 +113,7 @@ public class Dew {
         Info.instance = applicationName + "@" + Info.profile + "@" + Info.ip + ":" + serverPort;
         Cluster.init(Info.name, Info.instance);
 
-        Dew.notify = Notify.init(Dew.dewConfig.getNotifies(), flag ->
-                " FROM " + Dew.Info.instance + " BY " + flag);
+        Dew.notify = Notify.init(Dew.dewConfig.getNotifies(), flag -> " FROM " + Dew.Info.instance + " BY " + flag);
 
         // Support java8 Time
         if (jacksonProperties != null) {
@@ -133,25 +122,29 @@ public class Dew {
 
         LOGGER.info("Load Dew cluster...");
         if (Dew.applicationContext.containsBean(injectDewConfig.getCluster().getCache() + "ClusterCache")) {
-            Dew.cluster.caches = (ClusterCacheWrap) Dew.applicationContext.getBean(injectDewConfig.getCluster().getCache() + "ClusterCache");
+            Dew.cluster.caches = (ClusterCacheWrap) Dew.applicationContext
+                    .getBean(injectDewConfig.getCluster().getCache() + "ClusterCache");
             Dew.cluster.cache = Dew.cluster.caches.instance();
         }
         if (Dew.applicationContext.containsBean(injectDewConfig.getCluster().getLock() + "ClusterLock")) {
-            Dew.cluster.lock = (ClusterLockWrap) Dew.applicationContext.getBean(injectDewConfig.getCluster().getLock() + "ClusterLock");
+            Dew.cluster.lock = (ClusterLockWrap) Dew.applicationContext
+                    .getBean(injectDewConfig.getCluster().getLock() + "ClusterLock");
         }
         if (Dew.applicationContext.containsBean(injectDewConfig.getCluster().getMap() + "ClusterMap")) {
-            Dew.cluster.map = (ClusterMapWrap) Dew.applicationContext.getBean(injectDewConfig.getCluster().getMap() + "ClusterMap");
+            Dew.cluster.map = (ClusterMapWrap) Dew.applicationContext
+                    .getBean(injectDewConfig.getCluster().getMap() + "ClusterMap");
         }
         if (Dew.applicationContext.containsBean(injectDewConfig.getCluster().getMq() + "ClusterMQ")) {
-            Dew.cluster.mq = (ClusterMQ) Dew.applicationContext.getBean(injectDewConfig.getCluster().getMq() + "ClusterMQ");
+            Dew.cluster.mq = (ClusterMQ) Dew.applicationContext
+                    .getBean(injectDewConfig.getCluster().getMq() + "ClusterMQ");
         }
         if (Dew.applicationContext.containsBean(injectDewConfig.getCluster().getElection() + "ClusterElection")) {
-            Dew.cluster.election =
-                    (ClusterElectionWrap) Dew.applicationContext.getBean(injectDewConfig.getCluster().getElection() + "ClusterElection");
+            Dew.cluster.election = (ClusterElectionWrap) Dew.applicationContext
+                    .getBean(injectDewConfig.getCluster().getElection() + "ClusterElection");
         }
         if (Dew.applicationContext.containsBean(injectDewConfig.getCluster().getTrace() + "ClusterTrace")) {
-            Dew.cluster.trace =
-                    (ClusterTrace) Dew.applicationContext.getBean(injectDewConfig.getCluster().getTrace() + "ClusterTrace");
+            Dew.cluster.trace = (ClusterTrace) Dew.applicationContext
+                    .getBean(injectDewConfig.getCluster().getTrace() + "ClusterTrace");
         }
         if (dewConfig.getCluster().getConfig().isHaEnabled()) {
             Cluster.ha(dewConfig.getCluster().getConfig().getHa());
@@ -398,7 +391,7 @@ public class Dew {
          * @return 上抛的异常对象 e
          */
         public static <E extends Throwable> E e(String code, E ex, int customHttpCode) {
-            $.bean.setValue(ex, "detailMessage", $.json.createObjectNode()
+            threadLocalUtil.set($.json.createObjectNode()
                     .put("code", code)
                     .put("message", ex.getLocalizedMessage())
                     .put("customHttpCode", customHttpCode)
@@ -415,12 +408,12 @@ public class Dew {
          * @return 上抛的异常对象
          */
         public static RTException e(Resp<?> resp) {
-            var ex = new RTException(resp.getMessage());
-            $.bean.setValue(ex, "detailMessage", $.json.createObjectNode()
+            threadLocalUtil.set($.json.createObjectNode()
                     .put("code", resp.getCode())
                     .put("message", resp.getMessage())
                     .put("customHttpCode", 200)
                     .toString());
+            var ex = new RTException(resp.getMessage());
             return ex;
         }
 

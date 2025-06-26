@@ -1,19 +1,3 @@
-/*
- * Copyright 2022. the original author or authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.trc.test.web;
 
 import com.ecfront.dew.common.$;
@@ -30,13 +14,13 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -232,9 +216,9 @@ public class WebController {
      */
     @GetMapping("time/param")
     public Resp<String> timeConvertParam(@RequestParam("date-time") LocalDateTime localDateTime,
-                                         @RequestParam("date") LocalDate localDate,
-                                         @RequestParam("time") LocalTime localTime,
-                                         @RequestParam("instant") Instant instant) {
+            @RequestParam("date") LocalDate localDate,
+            @RequestParam("time") LocalTime localTime,
+            @RequestParam("instant") Instant instant) {
         Assertions.assertNotNull(localDate);
         Assertions.assertNotNull(localDateTime);
         Assertions.assertNotNull(localTime);
@@ -347,14 +331,14 @@ public class WebController {
     public static class UserDTO {
 
         @NotNull(groups = CreateGroup.class)
-        @IdNumber(message = "身份证号错误", groups = {CreateGroup.class, UpdateGroup.class})
+        @IdNumber(message = "身份证号错误", groups = { CreateGroup.class, UpdateGroup.class })
         private String idCard;
 
-        @Min(value = 10, groups = {CreateGroup.class, UpdateGroup.class})
+        @Min(value = 10, groups = { CreateGroup.class, UpdateGroup.class })
         private Integer age;
 
         @NotNull(groups = CreateGroup.class)
-        @Phone(message = "手机号错误", groups = {CreateGroup.class, UpdateGroup.class})
+        @Phone(message = "手机号错误", groups = { CreateGroup.class, UpdateGroup.class })
         private String phone;
 
         private String addr;

@@ -1,19 +1,3 @@
-/*
- * Copyright 2022. the original author or authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package group.idealworld.dew.test;
 
 import org.junit.jupiter.api.extension.BeforeAllCallback;
@@ -55,14 +39,13 @@ public class RedisExtension implements BeforeAllCallback {
          */
         public void initialize(ConfigurableApplicationContext configurableApplicationContext) {
             TestPropertyValues.of(
-                    "spring.redis.host=" + REDIS_CONTAINER.getHost(),
-                    "spring.redis.port=" + REDIS_CONTAINER.getFirstMappedPort(),
-                    "spring.redis.password=" +
-                            "spring.redis.multi.other:host=" + REDIS_CONTAINER.getHost(),
-                    "spring.redis.multi.other:port=" + REDIS_CONTAINER.getFirstMappedPort(),
-                    "spring.redis.multi.other:database=1",
-                    "spring.redis.multi.other:password="
-            ).applyTo(configurableApplicationContext.getEnvironment());
+                    "spring.data.redis.host=" + REDIS_CONTAINER.getHost(),
+                    "spring.data.redis.port=" + REDIS_CONTAINER.getFirstMappedPort(),
+                    "spring.data.redis.password=",
+                    "spring.data.redis.multi.other:host=" + REDIS_CONTAINER.getHost(),
+                    "spring.data.redis.multi.other:port=" + REDIS_CONTAINER.getFirstMappedPort(),
+                    "spring.data.redis.multi.other:database=1",
+                    "spring.data.redis.multi.other:password=").applyTo(configurableApplicationContext.getEnvironment());
         }
     }
 

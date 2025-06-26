@@ -1,19 +1,3 @@
-/*
- * Copyright 2020. the original author or authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package group.idealworld.dew.core.basic.resp;
 
 import com.ecfront.dew.common.$;
@@ -24,6 +8,8 @@ import group.idealworld.dew.Dew;
 import group.idealworld.dew.core.basic.utils.TraceIdUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Arrays;
 
 /**
  * Standard.
@@ -69,8 +55,25 @@ public class StandardResp {
      */
     public static RTException e(Resp<?> resp) {
         var ex = new RTException(resp.getMessage());
-        $.bean.setValue(ex, "detailMessage", $.json.createObjectNode().put("code", resp.getCode()).put("message", resp.getMessage()).put("customHttpCode", 200).toString());
+        Dew.threadLocalUtil.set($.json.createObjectNode()
+                .put("code", resp.getCode())
+                .put("message", resp.getMessage())
+                .put("customHttpCode", 200)
+                .toString());
         return ex;
+    }
+
+    /**
+     * Custom.
+     *
+     * @param <E>          the type parameter
+     * @param code         the code
+     * @param businessFlag the business flag
+     * @param content      the content
+     * @return the resp
+     */
+    public static <E> Resp<E> custom(String code, String businessFlag, String content) {
+        return packageResp(code, businessFlag, content);
     }
 
     /**
@@ -84,7 +87,7 @@ public class StandardResp {
      * @return the resp
      */
     public static <E> Resp<E> custom(String code, String businessFlag, String content, Object... args) {
-        return packageResp(code, businessFlag, String.format(content, args));
+        return packageResp(code, businessFlag, String.format("content:%s,args:%s", content, Arrays.toString(args)));
     }
 
     /**
@@ -96,7 +99,19 @@ public class StandardResp {
      * @return the resp
      */
     public static <E> Resp<E> notFoundResource(String businessFlag, String resource) {
-        return packageResp(StandardCode.NOT_FOUND.toString(), businessFlag, "找不到[" + resource + "],请检查权限");
+        return packageResp(StandardCode.NOT_FOUND.toString(), businessFlag, String.format("找不到[%s],请检查权限", resource));
+    }
+
+    /**
+     * Not found.
+     *
+     * @param <E>          the type parameter
+     * @param businessFlag the business flag
+     * @param content      the content
+     * @return the resp
+     */
+    public static <E> Resp<E> notFound(String businessFlag, String content) {
+        return packageResp(StandardCode.NOT_FOUND.toString(), businessFlag, content);
     }
 
     /**
@@ -109,7 +124,20 @@ public class StandardResp {
      * @return the resp
      */
     public static <E> Resp<E> notFound(String businessFlag, String content, Object... args) {
-        return packageResp(StandardCode.NOT_FOUND.toString(), businessFlag, String.format(content, args));
+        return packageResp(StandardCode.NOT_FOUND.toString(), businessFlag,
+                String.format("content:%s,args:%s", content, Arrays.toString(args)));
+    }
+
+    /**
+     * Bad request.
+     *
+     * @param <E>          the type parameter
+     * @param businessFlag the business flag
+     * @param content      the content
+     * @return the resp
+     */
+    public static <E> Resp<E> badRequest(String businessFlag, String content) {
+        return packageResp(StandardCode.BAD_REQUEST.toString(), businessFlag, content);
     }
 
     /**
@@ -122,7 +150,8 @@ public class StandardResp {
      * @return the resp
      */
     public static <E> Resp<E> badRequest(String businessFlag, String content, Object... args) {
-        return packageResp(StandardCode.BAD_REQUEST.toString(), businessFlag, String.format(content, args));
+        return packageResp(StandardCode.BAD_REQUEST.toString(), businessFlag,
+                String.format("content:%s,args:%s", content, Arrays.toString(args)));
     }
 
     /**
@@ -134,7 +163,7 @@ public class StandardResp {
      * @return the resp
      */
     public static <E> Resp<E> unAuthorizedOperate(String businessFlag, String operate) {
-        return packageResp(StandardCode.UNAUTHORIZED.toString(), businessFlag, "操作[" + operate + "]没有权限");
+        return packageResp(StandardCode.UNAUTHORIZED.toString(), businessFlag, String.format("操作[%s]没有权限", operate));
     }
 
     /**
@@ -146,7 +175,19 @@ public class StandardResp {
      * @return the resp
      */
     public static <E> Resp<E> unAuthorizedResource(String businessFlag, String resource) {
-        return packageResp(StandardCode.UNAUTHORIZED.toString(), businessFlag, "资源[" + resource + "]没有权限");
+        return packageResp(StandardCode.UNAUTHORIZED.toString(), businessFlag, String.format("资源[%s]没有权限", resource));
+    }
+
+    /**
+     * Un authorized.
+     *
+     * @param <E>          the type parameter
+     * @param businessFlag the business flag
+     * @param content      the content
+     * @return the resp
+     */
+    public static <E> Resp<E> unAuthorized(String businessFlag, String content) {
+        return packageResp(StandardCode.UNAUTHORIZED.toString(), businessFlag, content);
     }
 
     /**
@@ -159,7 +200,20 @@ public class StandardResp {
      * @return the resp
      */
     public static <E> Resp<E> unAuthorized(String businessFlag, String content, Object... args) {
-        return packageResp(StandardCode.UNAUTHORIZED.toString(), businessFlag, String.format(content, args));
+        return packageResp(StandardCode.UNAUTHORIZED.toString(), businessFlag,
+                String.format("content:%s,args:%s", content, Arrays.toString(args)));
+    }
+
+    /**
+     * Conflict.
+     *
+     * @param <E>          the type parameter
+     * @param businessFlag the business flag
+     * @param content      the content
+     * @return the resp
+     */
+    public static <E> Resp<E> conflict(String businessFlag, String content) {
+        return packageResp(StandardCode.CONFLICT.toString(), businessFlag, content);
     }
 
     /**
@@ -172,7 +226,8 @@ public class StandardResp {
      * @return the resp
      */
     public static <E> Resp<E> conflict(String businessFlag, String content, Object... args) {
-        return packageResp(StandardCode.CONFLICT.toString(), businessFlag, String.format(content, args));
+        return packageResp(StandardCode.CONFLICT.toString(), businessFlag,
+                String.format("content:%s,args:%s", content, Arrays.toString(args)));
     }
 
     /**
@@ -184,7 +239,19 @@ public class StandardResp {
      * @return the resp
      */
     public static <E> Resp<E> lockedResource(String businessFlag, String resource) {
-        return packageResp(StandardCode.LOCKED.toString(), businessFlag, "资源[" + resource + "]被锁定");
+        return packageResp(StandardCode.LOCKED.toString(), businessFlag, String.format("资源[%s]被锁定", resource));
+    }
+
+    /**
+     * Locked.
+     *
+     * @param <E>          the type parameter
+     * @param businessFlag the business flag
+     * @param content      the content
+     * @return the resp
+     */
+    public static <E> Resp<E> locked(String businessFlag, String content) {
+        return packageResp(StandardCode.LOCKED.toString(), businessFlag, content);
     }
 
     /**
@@ -197,7 +264,8 @@ public class StandardResp {
      * @return the resp
      */
     public static <E> Resp<E> locked(String businessFlag, String content, Object... args) {
-        return packageResp(StandardCode.LOCKED.toString(), businessFlag, String.format(content, args));
+        return packageResp(StandardCode.LOCKED.toString(), businessFlag,
+                String.format("content:%s,args:%s", content, Arrays.toString(args)));
     }
 
     /**
@@ -209,7 +277,8 @@ public class StandardResp {
      * @return the resp
      */
     public static <E> Resp<E> unsupportedMediaType(String businessFlag, String request) {
-        return packageResp(StandardCode.UNSUPPORTED_MEDIA_TYPE.toString(), businessFlag, "请求[" + request + "]类型不支持");
+        return packageResp(StandardCode.UNSUPPORTED_MEDIA_TYPE.toString(), businessFlag,
+                String.format("请求[%s]类型不支持", request));
     }
 
     /**
@@ -222,7 +291,8 @@ public class StandardResp {
      * @return the resp
      */
     public static <E> Resp<E> unsupportedMediaType(String businessFlag, String content, Object... args) {
-        return packageResp(StandardCode.UNSUPPORTED_MEDIA_TYPE.toString(), businessFlag, String.format(content, args));
+        return packageResp(StandardCode.UNSUPPORTED_MEDIA_TYPE.toString(), businessFlag,
+                String.format("content:%s,args:%s", content, Arrays.toString(args)));
     }
 
     /**
@@ -234,7 +304,8 @@ public class StandardResp {
      * @return the resp
      */
     public static <E> Resp<E> serverError(String businessFlag, Throwable e) {
-        return packageResp(StandardCode.INTERNAL_SERVER_ERROR.toString(), businessFlag, "服务错误:" + e.getMessage());
+        return packageResp(StandardCode.INTERNAL_SERVER_ERROR.toString(), businessFlag,
+                String.format("服务错误:%s", e.getMessage()));
     }
 
     /**
@@ -259,7 +330,7 @@ public class StandardResp {
      * @return the resp
      */
     public static <E> Resp<E> notImplementedMethod(String businessFlag, String method) {
-        return packageResp(StandardCode.NOT_IMPLEMENTED.toString(), businessFlag, "方法[" + method + "]未实现");
+        return packageResp(StandardCode.NOT_IMPLEMENTED.toString(), businessFlag, String.format("方法[%s]未实现", method));
     }
 
     /**
@@ -272,7 +343,8 @@ public class StandardResp {
      * @return the resp
      */
     public static <E> Resp<E> notImplemented(String businessFlag, String content, Object... args) {
-        return packageResp(StandardCode.NOT_IMPLEMENTED.toString(), businessFlag, String.format(content, args));
+        return packageResp(StandardCode.NOT_IMPLEMENTED.toString(), businessFlag,
+                String.format("content:%s,args:%s", content, Arrays.toString(args)));
     }
 
     /**
@@ -296,13 +368,22 @@ public class StandardResp {
      * @return the resp
      */
     public static <E> Resp<E> serverUnavailable(String businessFlag, String content, Object... args) {
-        return packageResp(StandardCode.SERVICE_UNAVAILABLE.toString(), businessFlag, String.format(content, args));
+        return packageResp(StandardCode.SERVICE_UNAVAILABLE.toString(), businessFlag,
+                String.format("content:%s,args:%s", content, Arrays.toString(args)));
     }
 
     private static <E> Resp<E> packageResp(String statusCode, String businessFlag, String content) {
-        String code = Dew.cluster.trace != null ? TraceIdUtil.createResponseCode(statusCode, businessFlag) : (statusCode + "-" + Dew.Info.name + businessFlag);
+        String code = Dew.cluster.trace != null ? TraceIdUtil.createResponseCode(statusCode, businessFlag)
+                : (statusCode + "-" + Dew.Info.name + businessFlag);
         LOGGER.trace("RESP:[{}] {}", code, content);
         return Resp.custom(code, content);
+    }
+
+    public static void main(String[] args) {
+        String code = "dsdjhjsjds%s%L%sss";
+        String[] split = code.split("%s");
+        System.out.println(StandardResp.badRequest("test/dddd", code).getMessage());
+        System.out.println(StandardResp.badRequest("test/ssss", code, split[0], split[1]).getMessage());
     }
 
 }

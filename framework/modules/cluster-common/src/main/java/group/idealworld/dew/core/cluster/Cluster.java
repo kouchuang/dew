@@ -1,26 +1,10 @@
-/*
- * Copyright 2022. the original author or authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package group.idealworld.dew.core.cluster;
 
 import com.ecfront.dew.common.$;
 import com.ecfront.dew.common.DependencyHelper;
 import group.idealworld.dew.core.cluster.dto.MessageHeader;
 import group.idealworld.dew.core.cluster.ha.ClusterHA;
-import group.idealworld.dew.core.cluster.ha.H2ClusterHA;
+import group.idealworld.dew.core.cluster.ha.SqliteClusterHA;
 import group.idealworld.dew.core.cluster.ha.dto.HAConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -89,10 +73,13 @@ public class Cluster {
     /**
      * 初始化MQ Header的自定义处理方法.
      *
-     * @param mqGetHeader 在发送MQ消息前自定义设置MQ Header , Input:Topic name, Output:Header Items
-     * @param mqSetHeader 在收到MQ消息时自定义设置MQ Header , Input:Topic name + Header Items, Output:Header Items
+     * @param mqGetHeader 在发送MQ消息前自定义设置MQ Header , Input:Topic name, Output:Header
+     *                    Items
+     * @param mqSetHeader 在收到MQ消息时自定义设置MQ Header , Input:Topic name + Header Items,
+     *                    Output:Header Items
      */
-    public static void initMqHeader(Function<String, Map<String, Object>> mqGetHeader, Function<MessageHeader, Map<String, Object>> mqSetHeader) {
+    public static void initMqHeader(Function<String, Map<String, Object>> mqGetHeader,
+                                    Function<MessageHeader, Map<String, Object>> mqSetHeader) {
         Cluster.mqGetHeader = mqGetHeader;
         Cluster.mqSetHeader = mqSetHeader;
     }
@@ -112,23 +99,13 @@ public class Cluster {
      * @param haConfig HA配置信息
      */
     public static void ha(HAConfig haConfig) {
-        if (DependencyHelper.hasDependency("org.h2.jdbcx.JdbcConnectionPool")) {
-            clusterHA = new H2ClusterHA();
+        if (DependencyHelper.hasDependency("org.sqlite.javax.SQLiteConnectionPoolDataSource")) {
+            clusterHA = new SqliteClusterHA();
         } else {
             LOGGER.warn("Not found HA implementation drives , HA disabled.");
             return;
         }
         try {
-            if (haConfig.getStoragePath() == null || haConfig.getStoragePath().isEmpty()) {
-                haConfig.setStoragePath("./");
-            } else {
-                if (!haConfig.getStoragePath().endsWith("/")) {
-                    haConfig.setStoragePath(haConfig.getStoragePath() + "/");
-                }
-            }
-            if (haConfig.getStorageName() == null || haConfig.getStorageName().isEmpty()) {
-                haConfig.setStorageName(applicationName);
-            }
             clusterHA.init(haConfig);
             LOGGER.info("HA initialized");
         } catch (SQLException e) {

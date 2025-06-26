@@ -1,18 +1,3 @@
-/*
- * Copyright 2020. the original author or authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package group.idealworld.dew.core.dbutils;
 
 import group.idealworld.dew.core.dbutils.dto.Meta;
@@ -20,6 +5,7 @@ import group.idealworld.dew.core.dbutils.dto.Page;
 import group.idealworld.dew.core.dbutils.process.DBExecutor;
 import group.idealworld.dew.core.dbutils.process.DSLoader;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,6 +20,7 @@ import java.util.Map;
  *
  * @author gudaoxuri
  */
+@Slf4j
 public class DewDB {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DewDB.class);
@@ -77,18 +64,11 @@ public class DewDB {
      * @deprecated - 此功能存在一定限制，建议使用 {@link #ddl(String)} 建表
      */
     @Deprecated
-    public void createTableIfNotExist(String tableName, String tableDesc,
-                                      Map<String, String> fields,
-                                      Map<String, String> fieldsDesc,
-                                      List<String> indexFields,
-                                      List<String> uniqueFields,
-                                      String pkField) throws SQLException {
+    public void createTableIfNotExist(String tableName, String tableDesc, Map<String, String> fields, Map<String, String> fieldsDesc, List<String> indexFields,
+                                      List<String> uniqueFields, String pkField) throws SQLException {
         tableName = tableName.toLowerCase();
-        DBExecutor.ddl(
-                dsInfo.getDialect().createTableIfNotExist(tableName, tableDesc,
-                        fields, fieldsDesc, indexFields, uniqueFields, pkField),
-                getConnection(), isCloseConnection()
-        );
+        DBExecutor.ddl(dsInfo.getDialect().createTableIfNotExist(tableName, tableDesc, fields, fieldsDesc, indexFields, uniqueFields, pkField), getConnection(),
+                isCloseConnection());
     }
 
     /**
@@ -144,7 +124,6 @@ public class DewDB {
         return DBExecutor.find(sql, params, clazz, getConnection(), isCloseConnection());
     }
 
-
     /**
      * 获取多个对象（带分页）.
      *
@@ -171,7 +150,7 @@ public class DewDB {
      * @throws SQLException SQL错误
      */
     public boolean exits(String tableName, String pkField, Object pkValue) throws SQLException {
-        return get("SELECT id FROM " + tableName + " WHERE " + pkField + " = ?", new Object[]{pkValue}).size() != 0;
+        return get("SELECT id FROM " + tableName + " WHERE " + pkField + " = ?", new Object[] {pkValue}).size() != 0;
     }
 
     /**
@@ -432,7 +411,7 @@ public class DewDB {
             if (!conn.isClosed()) {
                 return conn;
             }
-            //Re-setting connection when connection was close.
+            // Re-setting connection when connection was close.
             synchronized (DSLoader.class) {
                 LOGGER.warn("[DewDBUtils]Connection info [{}] was close", conn.toString());
                 DSLoader.loadPool(dsInfo.getDsConfig(), dsInfo.getDialect());

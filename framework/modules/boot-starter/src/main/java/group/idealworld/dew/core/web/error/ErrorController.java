@@ -1,19 +1,3 @@
-/*
- * Copyright 2022. the original author or authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package group.idealworld.dew.core.web.error;
 
 import com.ecfront.dew.common.$;
@@ -24,7 +8,12 @@ import group.idealworld.dew.Dew;
 import group.idealworld.dew.core.DewConfig;
 import group.idealworld.dew.core.basic.resp.StandardResp;
 import io.swagger.v3.oas.annotations.Hidden;
+import jakarta.servlet.ServletRequestWrapper;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.ConstraintViolationException;
 import org.apache.catalina.connector.RequestFacade;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
@@ -32,6 +21,7 @@ import org.springframework.boot.autoconfigure.web.servlet.error.AbstractErrorCon
 import org.springframework.boot.web.error.ErrorAttributeOptions;
 import org.springframework.boot.web.servlet.error.ErrorAttributes;
 import org.springframework.context.annotation.Bean;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.ObjectUtils;
@@ -41,11 +31,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.ServletRequestWrapper;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.validation.ConstraintViolationException;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -66,7 +53,8 @@ public class ErrorController extends AbstractErrorController {
     private static final int FALL_BACK_STATUS = 500;
 
     // TODO 可能有风险
-    private static final Pattern MESSAGE_CHECK = Pattern.compile("^\\{\"code\":\".*?\",\"message\":\".*?\",\"customHttpCode\":.*?\\}$");
+    private static final Pattern MESSAGE_CHECK = Pattern
+            .compile("^\\{\"code\":\".*?\",\"message\":\".*?\",\"customHttpCode\":.*?\\}$");
 
     private static final String SPECIAL_ERROR_FLAG = "org.springframework.boot.web.servlet.error.DefaultErrorAttributes.ERROR";
 
@@ -89,7 +77,9 @@ public class ErrorController extends AbstractErrorController {
      */
     @RequestMapping()
     @ResponseBody
-    public Object error(HttpServletRequest request) {
+    public Object error(HttpServletRequest request) throws InvocationTargetException, IllegalAccessException {
+        var detailMessage = Dew.threadLocalUtil.get();
+        Dew.threadLocalUtil.remove();
         Object specialError = request.getAttribute(SPECIAL_ERROR_FLAG);
         if (specialError instanceof Resp.FallbackException) {
             return ResponseEntity
@@ -109,9 +99,10 @@ public class ErrorController extends AbstractErrorController {
         } else {
             path = ((RequestFacade) ((ServletRequestWrapper) request).getRequest()).getRequestURI();
         }
-        int httpCode = (int) error.getOrDefault("status", -1);
+        HttpStatus httpStatus = getStatus(request);
+        int httpCode = httpStatus.value();
         String message = error.getOrDefault("message", "").toString();
-        String exMsg = (String) error.getOrDefault("error", "");
+        String exMsg = httpStatus.getReasonPhrase();
         List exDetail = null;
         if (error.containsKey("errors") && !((List) error.get("errors")).isEmpty()) {
             exDetail = (List) error.get("errors");
@@ -121,7 +112,8 @@ public class ErrorController extends AbstractErrorController {
         } else {
             exClass = specialError.getClass().getName();
         }
-        Object[] result = error(request, path, httpCode, message, exClass, exMsg, exDetail, (Throwable) specialError);
+        Object[] result = error(request, path, httpCode, StringUtils.isEmpty(detailMessage) ? message : detailMessage,
+                exClass, exMsg, exDetail, (Throwable) specialError);
         httpCode = (int) result[0];
         if (httpCode > 499) {
             // 服务错误才通知
@@ -162,13 +154,11 @@ public class ErrorController extends AbstractErrorController {
         if (specialError instanceof ConstraintViolationException) {
             ArrayNode errorExt = $.json.createArrayNode();
             ((ConstraintViolationException) specialError).getConstraintViolations()
-                    .forEach(cv ->
-                            errorExt.add($.json.createObjectNode()
-                                    .put("field", "")
-                                    .put("reason", cv.getConstraintDescriptor()
-                                            .getAnnotation().annotationType().getSimpleName())
-                                    .put("msg", cv.getMessage()))
-                    );
+                    .forEach(cv -> errorExt.add($.json.createObjectNode()
+                            .put("field", "")
+                            .put("reason", cv.getConstraintDescriptor()
+                                    .getAnnotation().annotationType().getSimpleName())
+                            .put("msg", cv.getMessage())));
             message += DETAIL_FLAG + $.json.toJsonString(errorExt);
         }
         if (specialError instanceof MethodArgumentNotValidException && exDetail != null && !exDetail.isEmpty()) {
@@ -192,9 +182,9 @@ public class ErrorController extends AbstractErrorController {
         } else {
             httpCode = 200;
         }
-        LOGGER.error("Request [{}-{}] {} , error {} : {}", request.getMethod(), path, Dew.context().getSourceIP(), busCode, message);
-
-        var resp = StandardResp.custom(busCode + "", path, "[" + exMsg + "]" + message);
+        LOGGER.error("Request [{}-{}] {} , error {} : {}", request.getMethod(), path, Dew.context().getSourceIP(),
+                busCode, message);
+        var resp = StandardResp.custom(busCode, path, String.format("[%s]%s", exMsg, message));
         String body = $.json.toJsonString(resp);
         return new Object[]{httpCode, body};
     }

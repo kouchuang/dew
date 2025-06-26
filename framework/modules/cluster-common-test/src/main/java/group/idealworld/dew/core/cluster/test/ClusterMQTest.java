@@ -1,19 +1,3 @@
-/*
- * Copyright 2022. the original author or authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package group.idealworld.dew.core.cluster.test;
 
 import group.idealworld.dew.core.cluster.Cluster;
@@ -144,17 +128,16 @@ public class ClusterMQTest {
                 throw new RuntimeException("Mock Some Error");
             }
         }));
-        mockErrorThread.start();
+        Thread.startVirtualThread(mockErrorThread);
         Thread.sleep(1000);
         mq.publish("test_ha", "ha_msgA");
         waitingOccurError.await();
-        mockErrorThread.stop();
         // restart subscribe
         CountDownLatch waiting = new CountDownLatch(2);
-        new Thread(() -> mq.subscribe("test_ha", message -> {
+        Thread.startVirtualThread(new Thread(() -> mq.subscribe("test_ha", message -> {
             LOGGER.info("subscribe new instance: pub_sub_ha>>" + message);
             waiting.countDown();
-        })).start();
+        })));
         Thread.sleep(1000);
         mq.publish("test_ha", "ha_msgB");
         waiting.await();

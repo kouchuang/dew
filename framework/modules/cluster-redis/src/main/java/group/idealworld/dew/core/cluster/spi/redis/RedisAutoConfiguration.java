@@ -1,19 +1,3 @@
-/*
- * Copyright 2022. the original author or authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package group.idealworld.dew.core.cluster.spi.redis;
 
 import io.lettuce.core.resource.ClientResources;
@@ -27,6 +11,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.data.redis.LettuceClientConfigurationBuilderCustomizer;
 import org.springframework.boot.autoconfigure.data.redis.MultiConnectionConfiguration;
+import org.springframework.boot.autoconfigure.data.redis.RedisConnectionDetails;
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
@@ -40,7 +25,7 @@ import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactor
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.RedisSerializer;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
@@ -53,7 +38,8 @@ import java.util.Map;
 @EnableConfigurationProperties(MultiRedisConfig.class)
 @Configuration
 @ConditionalOnClass(RedisTemplate.class)
-@ConditionalOnExpression("#{'${dew.cluster.cache}'=='redis' " + "|| '${dew.cluster.mq}'=='redis' " + "|| '${dew.cluster.lock}'=='redis' " + "|| " +
+@ConditionalOnExpression("#{'${dew.cluster.cache}'=='redis' " + "|| '${dew.cluster.mq}'=='redis' "
+        + "|| '${dew.cluster.lock}'=='redis' " + "|| " +
         "'${dew.cluster.map}'=='redis' " + "|| '${dew.cluster.election}'=='redis'}")
 public class RedisAutoConfiguration {
 
@@ -80,6 +66,8 @@ public class RedisAutoConfiguration {
 
     @Autowired
     private RedisTemplate<String, String> redisTemplate = new RedisTemplate<>();
+    @Autowired
+    private RedisConnectionDetails redisConnectionDetails;
 
     private static final Map<String, RedisTemplate<String, String>> REDIS_TEMPLATES = new HashMap<>();
 
@@ -97,11 +85,14 @@ public class RedisAutoConfiguration {
         }
     }
 
-    private void initMultiDS(Map<String, RedisProperties> properties)  {
-        ConfigurableListableBeanFactory beanFactory = ((ConfigurableApplicationContext) applicationContext).getBeanFactory();
+    private void initMultiDS(Map<String, RedisProperties> properties) {
+        ConfigurableListableBeanFactory beanFactory = ((ConfigurableApplicationContext) applicationContext)
+                .getBeanFactory();
         for (Map.Entry<String, RedisProperties> prop : properties.entrySet()) {
-            LettuceConnectionFactory redisConnectionFactory = new MultiConnectionConfiguration(prop.getValue(), standaloneConfigurationProvider,
-                    sentinelConfigurationProvider, clusterConfigurationProvider).redisConnectionFactory(builderCustomizers, clientResources);
+            LettuceConnectionFactory redisConnectionFactory = new MultiConnectionConfiguration(prop.getValue(),
+                    standaloneConfigurationProvider,
+                    sentinelConfigurationProvider, clusterConfigurationProvider, redisConnectionDetails)
+                    .redisConnectionFactory(builderCustomizers, clientResources);
             redisConnectionFactory.afterPropertiesSet();
             RedisTemplate<String, String> redisTemplate = new RedisTemplate<>();
             redisTemplate.setConnectionFactory(redisConnectionFactory);

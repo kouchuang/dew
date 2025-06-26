@@ -1,21 +1,4 @@
-/*
- * Copyright 2022. the original author or authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package group.idealworld.dew.core.doc;
-
 
 import group.idealworld.dew.Dew;
 import group.idealworld.dew.core.DewConfig;
@@ -27,19 +10,19 @@ import io.swagger.v3.oas.models.media.StringSchema;
 import io.swagger.v3.oas.models.parameters.HeaderParameter;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
-import org.springdoc.core.GroupedOpenApi;
+import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.ArrayList;
 import java.util.stream.Collectors;
 
 /**
  * Swagger配置.
  *
  * @author gudaoxuri
- * @see <a href="https://springdoc.org/migrating-from-springfox.html">migrating-from-springfox</a>
+ * @see <a href=
+ * "https://springdoc.org/migrating-from-springfox.html">migrating-from-springfox</a>
  */
 @Configuration
 @ConditionalOnProperty(prefix = "dew.basic.doc", name = "enabled", havingValue = "true", matchIfMissing = true)
@@ -49,10 +32,14 @@ public class DocAutoConfiguration {
     public GroupedOpenApi dewDefaultGroup() {
         return GroupedOpenApi.builder()
                 .group("dew-default")
-                .addOpenApiCustomiser(openApi -> openApi.getPaths().values().stream().flatMap(pathItem -> pathItem.readOperations().stream())
-                        .forEach(operation ->
-                                Dew.dewConfig.getBasic().getDoc().getRequestHeaders().forEach((key, value) ->
-                                        operation.addParametersItem(new HeaderParameter().$ref("#/components/parameters/" + key)))))
+                .addOpenApiCustomizer(openApi -> openApi.getPaths().values().stream()
+                        .flatMap(pathItem -> pathItem.readOperations().stream())
+                        .forEach(operation -> Dew.dewConfig.getBasic().getDoc()
+                                .getRequestHeaders()
+                                .forEach((key, value) -> operation.addParametersItem(
+                                        new HeaderParameter().$ref(
+                                                "#/components/parameters/"
+                                                        + key)))))
                 .packagesToScan(Dew.dewConfig.getBasic().getDoc().getBasePackage().split(";"))
                 .build();
     }
@@ -67,16 +54,15 @@ public class DocAutoConfiguration {
         if (!Dew.dewConfig.getBasic().getDoc().getServers().isEmpty()) {
             openAPI.servers(
                     Dew.dewConfig.getBasic().getDoc().getServers().entrySet().stream()
-                            .map(entry ->
-                                    new Server().url(entry.getValue()).description(entry.getKey()))
+                            .map(entry -> new Server().url(entry.getValue())
+                                    .description(entry.getKey()))
                             .collect(Collectors.toList()));
         }
         if (Dew.dewConfig.getBasic().getDoc().getContact() != null) {
             openAPI.getInfo().contact(new Contact()
                     .name(Dew.dewConfig.getBasic().getDoc().getContact().getName())
                     .email(Dew.dewConfig.getBasic().getDoc().getContact().getEmail())
-                    .url(Dew.dewConfig.getBasic().getDoc().getContact().getUrl())
-            );
+                    .url(Dew.dewConfig.getBasic().getDoc().getContact().getUrl()));
         }
         // Add Auth
         var components = new Components()
@@ -84,12 +70,12 @@ public class DocAutoConfiguration {
                         .type(SecurityScheme.Type.APIKEY)
                         .name(Dew.dewConfig.getSecurity().getTokenFlag())
                         .in(Dew.dewConfig.getSecurity().isTokenInHeader()
-                                ? SecurityScheme.In.HEADER : SecurityScheme.In.QUERY));
+                                ? SecurityScheme.In.HEADER
+                                : SecurityScheme.In.QUERY));
         if (!Dew.dewConfig.getBasic().getDoc().getRequestHeaders().isEmpty()) {
-            Dew.dewConfig.getBasic().getDoc().getRequestHeaders().forEach((key, value) ->
-                    components
-                            .addParameters(key, new HeaderParameter().required(false).name(key).description(value).schema(new StringSchema()))
-            );
+            Dew.dewConfig.getBasic().getDoc().getRequestHeaders().forEach((key, value) -> components
+                    .addParameters(key, new HeaderParameter().required(false).name(key)
+                            .description(value).schema(new StringSchema())));
         }
         openAPI.components(components);
         return openAPI;

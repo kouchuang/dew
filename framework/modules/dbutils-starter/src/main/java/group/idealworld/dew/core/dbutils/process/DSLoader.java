@@ -1,19 +1,3 @@
-/*
- * Copyright 2020. the original author or authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package group.idealworld.dew.core.dbutils.process;
 
 import com.alibaba.druid.pool.DruidDataSource;
@@ -34,9 +18,6 @@ import java.util.stream.Collectors;
 @Slf4j
 public class DSLoader {
 
-    private DSLoader() {
-    }
-
     private static final Map<String, DSInfo> MULTI_DS = new HashMap<>();
 
     public static DSInfo getDSInfo(String dsCode) {
@@ -45,7 +26,6 @@ public class DSLoader {
         }
         return MULTI_DS.get(dsCode);
     }
-
 
     public static void load(DBUtilsConfig dbUtilsConfig) {
         loadDS(dbUtilsConfig.getDs());
@@ -75,7 +55,11 @@ public class DSLoader {
         dsConfigs.forEach(dsConfig -> {
             Dialect dialect = DialectFactory.parseDialect(dsConfig.getUrl());
             assert dialect != null;
-            MULTI_DS.put(dsConfig.getCode(), DSInfo.builder().dataSource(loadPool(dsConfig, dialect)).dialect(dialect).dsConfig(dsConfig).build());
+            MULTI_DS.put(dsConfig.getCode(), DSInfo.builder()
+                    .dataSource(loadPool(dsConfig, dialect))
+                    .dialect(dialect)
+                    .dsConfig(dsConfig)
+                    .build());
             log.debug("Loaded pool: [{}] {}", dsConfig.getCode(), dsConfig.getUrl());
         });
     }
@@ -111,19 +95,21 @@ public class DSLoader {
             log.error("[DewDBUtils]Multi DS load error : " + e);
         }
         if (null != result) {
-            List<DSConfig> dsConfigs = result.stream().filter(Objects::nonNull).map(res -> {
-                DSConfig dsConfig = new DSConfig();
-                dsConfig.setPool(new DSConfig.PoolConfig());
-                dsConfig.setCode(res.get("code").toString());
-                dsConfig.setUrl(res.get("url").toString());
-                dsConfig.setUsername(res.get("username").toString());
-                dsConfig.setPassword(res.get("password").toString());
-                dsConfig.setUrl(res.get("url").toString());
-                dsConfig.setMonitor(Integer.parseInt(res.get("monitor").toString()) == 1);
-                dsConfig.getPool().setInitialSize(Integer.parseInt(res.get("pool_initialsize").toString()));
-                dsConfig.getPool().setMaxActive(Integer.parseInt(res.get("pool_maxactive").toString()));
-                return dsConfig;
-            }).collect(Collectors.toList());
+            List<DSConfig> dsConfigs = result.stream()
+                    .filter(Objects::nonNull)
+                    .map(res -> {
+                        DSConfig dsConfig = new DSConfig();
+                        dsConfig.setPool(new DSConfig.PoolConfig());
+                        dsConfig.setCode(res.get("code").toString());
+                        dsConfig.setUrl(res.get("url").toString());
+                        dsConfig.setUsername(res.get("username").toString());
+                        dsConfig.setPassword(res.get("password").toString());
+                        dsConfig.setMonitor(Integer.parseInt(res.get("monitor").toString()) == 1);
+                        dsConfig.getPool().setInitialSize(Integer.parseInt(res.get("pool_initialsize").toString()));
+                        dsConfig.getPool().setMaxActive(Integer.parseInt(res.get("pool_maxactive").toString()));
+                        return dsConfig;
+                    })
+                    .collect(Collectors.toList());
             loadDS(dsConfigs);
         }
     }

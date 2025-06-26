@@ -1,30 +1,14 @@
-/*
- * Copyright 2022. the original author or authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package group.idealworld.dew.example.cluster;
 
 import com.ecfront.dew.common.$;
 import group.idealworld.dew.Dew;
 import group.idealworld.dew.core.cluster.ClusterLock;
 import group.idealworld.dew.core.cluster.ClusterMap;
+import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import java.io.Serializable;
 
 /**
@@ -71,6 +55,7 @@ public class ClusterExampleInitiator {
         if (lock.tryLock(0, 1000)) {
             try {
                 // 已加锁，执行业务方法
+                lock.isLocked();
             } finally {
                 // 必须手工解锁
                 lock.unLock();
@@ -82,14 +67,12 @@ public class ClusterExampleInitiator {
         });
 
         // pub-sub
-        Dew.cluster.mq.subscribe("test_pub_sub", message ->
-                LOGGER.info("pub_sub>>" + message));
+        Dew.cluster.mq.subscribe("test_pub_sub", message -> LOGGER.info("pub_sub>>" + message));
         Thread.sleep(1000);
         Dew.cluster.mq.publish("test_pub_sub", "msgA");
         Dew.cluster.mq.publish("test_pub_sub", "msgB");
         // req-resp
-        Dew.cluster.mq.response("test_rep_resp", message ->
-                LOGGER.info("req_resp>>" + message));
+        Dew.cluster.mq.response("test_rep_resp", message -> LOGGER.info("req_resp>>" + message));
         Dew.cluster.mq.request("test_rep_resp", "msg1");
         Dew.cluster.mq.request("test_rep_resp", "msg2");
     }
